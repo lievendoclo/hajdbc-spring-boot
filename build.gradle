@@ -13,6 +13,11 @@ apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
 apply plugin: 'maven'
 
+version = "1.0.0-SNAPSHOT"
+group = "be.insaneprogramming.springboot"
+sourceCompatibility = 1.7
+compileJava.options.encoding = 'UTF-8'
+
 repositories {
     jcenter()
     maven {
@@ -35,4 +40,25 @@ compileJava.dependsOn(processResources)
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.4'
+}
+
+if (project.hasProperty('bintray_api_user') && project.hasProperty('bintray_api_key')) {
+    apply plugin: 'com.jfrog.bintray'
+    apply plugin: "maven"
+
+    bintray {
+        user = "${bintray_api_user?:''}"
+        key = "${bintray_api_key?:''}"
+
+        configurations = ['archives']
+
+        pkg {
+            repo = 'maven'
+            name = 'spring-boot-starter-hajdbc'
+            version {
+                name = version
+                vcsTag = version
+            }
+        }
+    }
 }
