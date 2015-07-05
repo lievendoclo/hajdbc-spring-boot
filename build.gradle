@@ -41,6 +41,25 @@ dependencies {
     testCompile 'org.hsqldb:hsqldb:2.3.2'
 }
 
+jar {
+    enabled = !sourceSets.main.allSource.empty
+    manifest.attributes["Created-By"] =
+            "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+    manifest.attributes["Implementation-Title"] = project.name
+    manifest.attributes["Implementation-Version"] = project.version
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    enabled = !sourceSets.main.allSource.empty
+    classifier = "sources"
+    from sourceSets.main.allJava.srcDirs
+    include "**/*.java"
+}
+
+artifacts {
+    archives sourcesJar
+}
+
 compileJava.dependsOn(processResources)
 
 task wrapper(type: Wrapper) {
