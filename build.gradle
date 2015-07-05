@@ -8,7 +8,7 @@ buildscript {
     }
 }
 
-apply plugin: 'java'
+apply plugin: 'groovy'
 apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
 apply plugin: 'maven'
@@ -28,12 +28,14 @@ repositories {
 dependencies {
     compile "org.springframework.boot:spring-boot-starter-jdbc:1.2.4.RELEASE"
     compile 'net.sf.ha-jdbc:ha-jdbc:3.0.3'
-
     optional "org.springframework.boot:spring-boot-configuration-processor:1.2.4.RELEASE"
-
     provided 'org.projectlombok:lombok:1.16.4'
 
     testCompile "junit:junit:4.11"
+    testCompile "org.spockframework:spock-core:0.7-groovy-2.0"
+    testCompile "org.codehaus.groovy:groovy-all:2.4.3"
+    testCompile "org.springframework:spring-test:4.1.6.RELEASE"
+    testCompile 'org.hsqldb:hsqldb:2.3.2'
 }
 
 compileJava.dependsOn(processResources)
