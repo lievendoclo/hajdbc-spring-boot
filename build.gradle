@@ -1,0 +1,38 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven { url 'http://repo.spring.io/plugins-release' }
+    }
+    dependencies {
+        classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'propdeps'
+apply plugin: 'propdeps-idea'
+apply plugin: 'maven'
+
+repositories {
+    jcenter()
+    maven {
+        url "https://repository.jboss.org/nexus/content/repositories/thirdparty-releases"
+    }
+}
+
+dependencies {
+    compile "org.springframework.boot:spring-boot-starter-jdbc:1.2.4.RELEASE"
+    compile 'net.sf.ha-jdbc:ha-jdbc:3.0.3'
+
+    optional "org.springframework.boot:spring-boot-configuration-processor:1.2.4.RELEASE"
+
+    provided 'org.projectlombok:lombok:1.16.4'
+
+    testCompile "junit:junit:4.11"
+}
+
+compileJava.dependsOn(processResources)
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.4'
+}
