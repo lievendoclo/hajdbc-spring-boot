@@ -78,7 +78,7 @@ if (project.hasProperty('bintray_api_user') && project.hasProperty('bintray_api_
 
         pkg {
             repo = 'maven'
-            name = 'spring-boot-starter-hajdbc'
+            name = 'hajdbc-spring-boot'
             version {
                 name = globalVersion
                 vcsTag = globalVersion
