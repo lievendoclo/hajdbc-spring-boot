@@ -16,4 +16,4 @@ include 'api'
 include 'services:webservice'
 */
 
-rootProject.name = 'spring-boot-starter-hajdbc'
+rootProject.name = 'hajdbc-spring-boot'
