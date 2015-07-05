@@ -42,30 +42,76 @@ import javax.annotation.PostConstruct;
 
 import lombok.Data;
 
+/**
+ * Autoconfiguration support for HA-JDBC.
+ */
 @ConfigurationProperties(prefix="hajdbc")
 @ConditionalOnClass(Driver.class)
 @AutoConfigureBefore(DataSourceAutoConfiguration.class)
 @Configuration
 @Data
 public class HaJdbcAutoConfiguration {
-    boolean initialize = true;
+    /**
+     * Enable or disable HA JDBC integration
+     * **/
+    boolean enabled = true;
+    /**
+     * Configure the backend databases for HA JDBC. Possible properties
+     * are id, location, driver, user and password
+     */
     List<DriverDatabase> driverDatabases;
+    /**
+     * The name of the HA JDBC cluster. To be used in the Spring Boot datasource url
+     */
     String clusterName = "default";
+    /**
+     * The cron expression that indicates when synchronization should occur
+     */
     String cronExpression = "0 0/1 * 1/1 * ? *";
+    /**
+     * Which balancer factory should be used for queries
+     */
     String balancerFactory = "round-robin";
+    /**
+     * What synchronization factory should be used
+     */
     String defaultSynchronizationStrategy = "full";
+    /**
+     * Indicates how the meta data for HA JDBC should be cached
+     */
     String databaseMetaDataCacheFactory = "shared-eager";
+    /**
+     * How the state of the cluster should be managed
+     */
     String stateManagerFactory = "simple";
+    /**
+     * The JDBC URL for an SQL state manager
+     */
     String stateManagerUrlPattern;
+    /**
+     * The user name for am SQL state manager
+     */
     String stateManagerUser;
+    /**
+     * The user password for an SQL state manager
+     */
     String stateManagerPassword;
+    /**
+     * The location pattern for an SqLite or BerkeleyDB state manager
+     */
     String stateManagerLocationPattern;
+    /**
+     * Whether identity column detection should be enabled
+     */
     boolean identityColumnDetectionEnabled = true;
+    /**
+     * Whether sequence detection should be enabled
+     */
     boolean sequenceDetectionEnabled = true;
 
     @PostConstruct
     void register() throws ParseException {
-        if (initialize) {
+        if (enabled) {
             DriverDatabaseClusterConfiguration config = new DriverDatabaseClusterConfiguration();
             if (driverDatabases != null && driverDatabases.size() > 0) {
                 config.setDatabases(driverDatabases);
