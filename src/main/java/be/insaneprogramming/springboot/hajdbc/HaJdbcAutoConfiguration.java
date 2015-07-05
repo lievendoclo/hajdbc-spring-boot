@@ -15,7 +15,6 @@ import net.sf.hajdbc.cache.simple.SimpleDatabaseMetaDataCacheFactory;
 import net.sf.hajdbc.sql.Driver;
 import net.sf.hajdbc.sql.DriverDatabase;
 import net.sf.hajdbc.sql.DriverDatabaseClusterConfiguration;
-import net.sf.hajdbc.state.StateManagerFactory;
 import net.sf.hajdbc.state.bdb.BerkeleyDBStateManagerFactory;
 import net.sf.hajdbc.state.simple.SimpleStateManagerFactory;
 import net.sf.hajdbc.state.sql.SQLStateManagerFactory;
@@ -43,62 +42,121 @@ import javax.annotation.PostConstruct;
 
 import lombok.Data;
 
+/**
+ * Autoconfiguration support for HA-JDBC.
+ */
 @ConfigurationProperties(prefix="hajdbc")
 @ConditionalOnClass(Driver.class)
 @AutoConfigureBefore(DataSourceAutoConfiguration.class)
 @Configuration
 @Data
 public class HaJdbcAutoConfiguration {
+    /**
+     * Enable or disable HA JDBC integration
+     * **/
+    boolean enabled = true;
+    /**
+     * Configure the backend databases for HA JDBC. Possible properties
+     * are id, location, driver, user and password
+     */
     List<DriverDatabase> driverDatabases;
+    /**
+     * The name of the HA JDBC cluster. To be used in the Spring Boot datasource url
+     */
     String clusterName = "default";
+    /**
+     * The cron expression that indicates when synchronization should occur
+     */
     String cronExpression = "0 0/1 * 1/1 * ? *";
+    /**
+     * Which balancer factory should be used for queries
+     */
     String balancerFactory = "round-robin";
+    /**
+     * What synchronization factory should be used
+     */
     String defaultSynchronizationStrategy = "full";
+    /**
+     * Indicates how the meta data for HA JDBC should be cached
+     */
     String databaseMetaDataCacheFactory = "shared-eager";
+    /**
+     * How the state of the cluster should be managed
+     */
     String stateManagerFactory = "simple";
+    /**
+     * The JDBC URL for an SQL state manager
+     */
     String stateManagerUrlPattern;
+    /**
+     * The user name for am SQL state manager
+     */
     String stateManagerUser;
+    /**
+     * The user password for an SQL state manager
+     */
     String stateManagerPassword;
+    /**
+     * The location pattern for an SqLite or BerkeleyDB state manager
+     */
     String stateManagerLocationPattern;
+    /**
+     * Whether identity column detection should be enabled
+     */
     boolean identityColumnDetectionEnabled = true;
+    /**
+     * Whether sequence detection should be enabled
+     */
     boolean sequenceDetectionEnabled = true;
 
     @PostConstruct
     void register() throws ParseException {
-        DriverDatabaseClusterConfiguration config = new DriverDatabaseClusterConfiguration();
-        config.setDatabases(driverDatabases);
-        config.setDatabaseMetaDataCacheFactory(DatabaseMetaDataCacheChoice.fromId(databaseMetaDataCacheFactory));
-        config.setBalancerFactory(BalancerChoice.fromId(balancerFactory));
-        config.setStateManagerFactory(StateManagerChoice.fromId(stateManagerFactory));
-        switch(stateManagerFactory) {
-            case "sql":
-                SQLStateManagerFactory sqlStateManagerFactory = (SQLStateManagerFactory) config.getStateManagerFactory();
-                if(stateManagerUrlPattern != null)
-                    sqlStateManagerFactory.setUrlPattern(stateManagerUrlPattern);
-                if(stateManagerUser != null)
-                    sqlStateManagerFactory.setUser(stateManagerUser);
-                if(stateManagerPassword != null)
-                    sqlStateManagerFactory.setPassword(stateManagerPassword);
-                break;
-            case "berkeleydb":
-                BerkeleyDBStateManagerFactory berkeleyDBStateManagerFactory = (BerkeleyDBStateManagerFactory) config.getStateManagerFactory();
-                if(stateManagerLocationPattern != null)
-                    berkeleyDBStateManagerFactory.setLocationPattern(stateManagerLocationPattern);
-                break;
-            case "sqlite":
-                SQLiteStateManagerFactory sqLiteStateManagerFactory = (SQLiteStateManagerFactory) config.getStateManagerFactory();
-                if(stateManagerLocationPattern != null)
-                    sqLiteStateManagerFactory.setLocationPattern(stateManagerLocationPattern);
-                break;
-        }
-        config.setSynchronizationStrategyMap(SynchronizationStrategyChoice.getIdMap());
-        config.setDefaultSynchronizationStrategy(defaultSynchronizationStrategy);
-        config.setIdentityColumnDetectionEnabled(identityColumnDetectionEnabled);
-        config.setSequenceDetectionEnabled(sequenceDetectionEnabled);
-        config.setAutoActivationExpression(new CronExpression(cronExpression));
+        if (enabled) {
+            DriverDatabaseClusterConfiguration config = new DriverDatabaseClusterConfiguration();
+            if (driverDatabases != null && driverDatabases.size() > 0) {
+                config.setDatabases(driverDatabases);
+            } else {
+                throw new IllegalStateException("HA JDBC driver databases should be configured to contain at least one driver database");
+            }
+            config.setDatabaseMetaDataCacheFactory(DatabaseMetaDataCacheChoice.fromId(databaseMetaDataCacheFactory));
+            config.setBalancerFactory(BalancerChoice.fromId(balancerFactory));
+            switch (stateManagerFactory) {
+                case "sql":
+                    SQLStateManagerFactory sqlStateManagerFactory = new SQLStateManagerFactory();
+                    if (stateManagerUrlPattern != null)
+                        sqlStateManagerFactory.setUrlPattern(stateManagerUrlPattern);
+                    if (stateManagerUser != null)
+                        sqlStateManagerFactory.setUser(stateManagerUser);
+                    if (stateManagerPassword != null)
+                        sqlStateManagerFactory.setPassword(stateManagerPassword);
+                    config.setStateManagerFactory(sqlStateManagerFactory);
+                    break;
 
-        Driver.setConfigurationFactory(clusterName,
-                                       new SimpleDatabaseClusterConfigurationFactory<java.sql.Driver, DriverDatabase>(config));
+                case "berkeleydb":
+                    BerkeleyDBStateManagerFactory
+                        berkeleyDBStateManagerFactory = new BerkeleyDBStateManagerFactory();
+                    if (stateManagerLocationPattern != null)
+                        berkeleyDBStateManagerFactory.setLocationPattern(stateManagerLocationPattern);
+                    config.setStateManagerFactory(berkeleyDBStateManagerFactory);
+                    break;
+                case "sqlite":
+                    SQLiteStateManagerFactory sqLiteStateManagerFactory = new SQLiteStateManagerFactory();
+                    if (stateManagerLocationPattern != null)
+                        sqLiteStateManagerFactory.setLocationPattern(stateManagerLocationPattern);
+                    config.setStateManagerFactory(sqLiteStateManagerFactory);
+                    break;
+                default:
+                    config.setStateManagerFactory(new SimpleStateManagerFactory());
+            }
+            config.setSynchronizationStrategyMap(SynchronizationStrategyChoice.getIdMap());
+            config.setDefaultSynchronizationStrategy(defaultSynchronizationStrategy);
+            config.setIdentityColumnDetectionEnabled(identityColumnDetectionEnabled);
+            config.setSequenceDetectionEnabled(sequenceDetectionEnabled);
+            config.setAutoActivationExpression(new CronExpression(cronExpression));
+
+            Driver.setConfigurationFactory(clusterName,
+                                           new SimpleDatabaseClusterConfigurationFactory<java.sql.Driver, DriverDatabase>(config));
+        }
     }
 
     private enum DatabaseMetaDataCacheChoice {
@@ -177,28 +235,5 @@ public class HaJdbcAutoConfiguration {
             }
             return strategies;
         }
-    }
-
-    private enum StateManagerChoice {
-        SIMPLE(new SimpleStateManagerFactory()),
-        BERKELEYDB(new BerkeleyDBStateManagerFactory()),
-        SQLITE(new SQLiteStateManagerFactory()),
-        SQL(new SQLStateManagerFactory());
-
-        private StateManagerFactory stateManagerFactory;
-
-        StateManagerChoice(StateManagerFactory stateManagerFactory) {
-            this.stateManagerFactory = stateManagerFactory;
-        }
-
-        static StateManagerFactory fromId(String id) {
-            for (StateManagerChoice stateManagerChoice : StateManagerChoice.values()) {
-                if(stateManagerChoice.stateManagerFactory.getId().equals(id)) {
-                    return stateManagerChoice.stateManagerFactory;
-                }
-            }
-            throw new IllegalArgumentException("Could not find state manager factory with id " + id);
-        }
-
     }
 }
