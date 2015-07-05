@@ -13,7 +13,7 @@ apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
 apply plugin: 'maven'
 
-version = "1.0.0-SNAPSHOT"
+version = "1.0.0"
 group = "be.insaneprogramming.springboot"
 sourceCompatibility = 1.7
 compileJava.options.encoding = 'UTF-8'
