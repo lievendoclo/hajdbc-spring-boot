@@ -1,5 +1,21 @@
 package be.insaneprogramming.springboot.hajdbc;
 
+import java.text.ParseException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import net.sf.hajdbc.SimpleDatabaseClusterConfigurationFactory;
 import net.sf.hajdbc.SynchronizationStrategy;
 import net.sf.hajdbc.balancer.BalancerFactory;
@@ -19,24 +35,6 @@ import net.sf.hajdbc.sync.PassiveSynchronizationStrategy;
 import net.sf.hajdbc.sync.PerTableSynchronizationStrategy;
 import net.sf.hajdbc.util.concurrent.cron.CronExpression;
 
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import java.text.ParseException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.PostConstruct;
-
-import lombok.Data;
-
 /**
  * Autoconfiguration support for HA-JDBC.
  */
@@ -44,7 +42,6 @@ import lombok.Data;
 @ConditionalOnClass(Driver.class)
 @AutoConfigureBefore(DataSourceAutoConfiguration.class)
 @Configuration
-@Data
 public class HaJdbcAutoConfiguration {
     private static final List<SynchronizationStrategy> SYNCHRONIZATION_STRATEGIES = Arrays.asList(
         new FullSynchronizationStrategy(),
@@ -58,24 +55,24 @@ public class HaJdbcAutoConfiguration {
     /**
      * Enable or disable HA JDBC integration
      * **/
-    boolean enabled = true;
+    private boolean enabled = true;
     /**
      * Configure the backend databases for HA JDBC. Possible properties
      * are id, location, driver, user and password
      */
-    List<DriverDatabase> driverDatabases;
+    private List<DriverDatabase> driverDatabases;
     /**
      * The name of the HA JDBC cluster. To be used in the Spring Boot datasource url
      */
-    String clusterName = "default";
+    private String clusterName = "default";
     /**
      * The cron expression that indicates when synchronization should occur
      */
-    String cronExpression = "0 0/1 * 1/1 * ? *";
+    private String cronExpression = "0 0/1 * 1/1 * ? *";
     /**
      * What synchronization factory should be used
      */
-    String defaultSynchronizationStrategy = "full";
+    private String defaultSynchronizationStrategy = "full";
     /**
      * Whether identity column detection should be enabled
      */
@@ -132,5 +129,61 @@ public class HaJdbcAutoConfiguration {
             map.put(synchronizationStrategy.getId(), synchronizationStrategy);
         }
         return map;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public List<DriverDatabase> getDriverDatabases() {
+        return driverDatabases;
+    }
+
+    public void setDriverDatabases(List<DriverDatabase> driverDatabases) {
+        this.driverDatabases = driverDatabases;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
+
+    public String getCronExpression() {
+        return cronExpression;
+    }
+
+    public void setCronExpression(String cronExpression) {
+        this.cronExpression = cronExpression;
+    }
+
+    public String getDefaultSynchronizationStrategy() {
+        return defaultSynchronizationStrategy;
+    }
+
+    public void setDefaultSynchronizationStrategy(String defaultSynchronizationStrategy) {
+        this.defaultSynchronizationStrategy = defaultSynchronizationStrategy;
+    }
+
+    public boolean isIdentityColumnDetectionEnabled() {
+        return identityColumnDetectionEnabled;
+    }
+
+    public void setIdentityColumnDetectionEnabled(boolean identityColumnDetectionEnabled) {
+        this.identityColumnDetectionEnabled = identityColumnDetectionEnabled;
+    }
+
+    public boolean isSequenceDetectionEnabled() {
+        return sequenceDetectionEnabled;
+    }
+
+    public void setSequenceDetectionEnabled(boolean sequenceDetectionEnabled) {
+        this.sequenceDetectionEnabled = sequenceDetectionEnabled;
     }
 }
