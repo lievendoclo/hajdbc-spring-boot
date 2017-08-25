@@ -10,13 +10,13 @@ stages:
    - release
 
 run-tests:
-   image: anapsix/alpine-java:8_jdk
+   image: registry.gitlab.com/lievendoclo/hajdbc-spring-boot/alpine-java:8_jdk
    stage: qa
    script:
      - $BUILD_COMMAND test
 
 build:
-  image: anapsix/alpine-java:8_jdk
+  image: registry.gitlab.com/lievendoclo/hajdbc-spring-boot/alpine-java:8_jdk
   stage: build
   script:
     - $BUILD_COMMAND clean build
