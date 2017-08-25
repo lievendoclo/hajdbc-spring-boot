@@ -1,0 +1,28 @@
+services:
+  - docker:dind
+
+variables:
+  BUILD_COMMAND: ./gradlew
+
+stages:
+   - qa
+   - build
+   - release
+
+run-tests:
+   image: anapsix/alpine-java:8_jdk
+   stage: qa
+   script:
+     - $BUILD_COMMAND test
+
+build:
+  image: anapsix/alpine-java:8_jdk
+  stage: build
+  script:
+    - $BUILD_COMMAND clean build
+  artifacts:
+      paths:
+          - build/libs/*.jar
+      expire_in: 3 days
+  except:
+    - tags
