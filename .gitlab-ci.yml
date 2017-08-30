@@ -19,7 +19,7 @@ build:
   image: registry.gitlab.com/lievendoclo/hajdbc-spring-boot/alpine-java:8_jdk
   stage: build
   script:
-    - $BUILD_COMMAND clean build
+    - $BUILD_COMMAND clean assemble
   artifacts:
       paths:
           - build/libs/*.jar
