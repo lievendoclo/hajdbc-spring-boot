@@ -1,28 +1,28 @@
-services:
-  - docker:dind
+image: gradle:alpine
 
 variables:
-  BUILD_COMMAND: ./gradlew
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
-stages:
-   - qa
-   - build
-   - release
-
-run-tests:
-   image: registry.gitlab.com/lievendoclo/hajdbc-spring-boot/alpine-java:8_jdk
-   stage: qa
-   script:
-     - $BUILD_COMMAND test
+before_script:
+  - export GRADLE_USER_HOME=`pwd`/.gradle
 
 build:
-  image: registry.gitlab.com/lievendoclo/hajdbc-spring-boot/alpine-java:8_jdk
   stage: build
-  script:
-    - $BUILD_COMMAND clean assemble
-  artifacts:
-      paths:
-          - build/libs/*.jar
-      expire_in: 3 days
-  except:
-    - tags
+  script: gradle --build-cache assemble
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+
+
+test:
+  stage: test
+  script: gradle check
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
+      - .gradle
