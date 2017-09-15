@@ -22,7 +22,7 @@ test:
 
 build:
   stage: build
-  script: gradle --build-cache assemble
+  script: ./gradlew --build-cache assemble
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull
