@@ -1,4 +1,4 @@
-image: anapsix:alpine-java:8_jdk
+image: anapsix/alpine-java:8_jdk
 
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
