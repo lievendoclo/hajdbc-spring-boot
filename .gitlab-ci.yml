@@ -1,14 +1,18 @@
-image: gradle:alpine
+image: anapsix:alpine-java:8_jdk
 
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
-
-build:
-  stage: build
-  script: gradle --build-cache assemble
+  
+stages:
+  - qa
+  - build
+  
+test:
+  stage: qa
+  script: ./gradlew --build-cache check
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
@@ -16,13 +20,14 @@ build:
       - build
       - .gradle
 
-
-test:
-  stage: test
-  script: gradle check
+build:
+  stage: build
+  script: gradle --build-cache assemble
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull
     paths:
       - build
       - .gradle
+
+
