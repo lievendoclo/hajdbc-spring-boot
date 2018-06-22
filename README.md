@@ -1,6 +1,11 @@
+![](https://api.travis-ci.org/lievendoclo/hajdbc-spring-boot.svg?branch=develop)
+![](https://img.shields.io/badge/spring%20boot%202-compatible-green.svg)
+
 # hajdbc-spring-boot
 
 Autoconfiguration of HA-JDBC components for Spring Boot
+
+
 
 # Usage
 
