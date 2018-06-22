@@ -14,7 +14,7 @@ apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
 apply plugin: 'maven'
 
-version = "1.0.4-SNAPSHOT"
+version = "2.0.0-SNAPSHOT"
 group = "be.insaneprogramming.springboot"
 sourceCompatibility = 1.7
 compileJava.options.encoding = 'UTF-8'
@@ -29,14 +29,14 @@ repositories {
 }
 
 dependencies {
-    compile "org.springframework.boot:spring-boot-starter-jdbc:1.4.1.RELEASE"
+    compile "org.springframework.boot:spring-boot-starter-jdbc:2.0.0.RELEASE"
     compile 'net.sf.ha-jdbc:ha-jdbc:3.0.3'
-    optional "org.springframework.boot:spring-boot-configuration-processor:1.4.1.RELEASE"
+    optional "org.springframework.boot:spring-boot-configuration-processor:2.0.0.RELEASE"
 
     testCompile "junit:junit:4.11"
     testCompile "org.spockframework:spock-core:0.7-groovy-2.0"
     testCompile "org.codehaus.groovy:groovy-all:2.4.3"
-    testCompile "org.springframework.boot:spring-boot-test:1.4.1.RELEASE"
+    testCompile "org.springframework.boot:spring-boot-test:2.0.0.RELEASE"
     testCompile 'org.hsqldb:hsqldb:2.3.2'
 }
 

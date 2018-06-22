@@ -1,18 +1,16 @@
 package be.insaneprogramming.springboot.hajdbc;
 
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.annotation.PostConstruct;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,60 +25,21 @@ import net.sf.hajdbc.sql.DriverDatabase;
 import net.sf.hajdbc.sql.DriverDatabaseClusterConfiguration;
 import net.sf.hajdbc.state.StateManagerFactory;
 import net.sf.hajdbc.state.simple.SimpleStateManagerFactory;
-import net.sf.hajdbc.sync.DifferentialSynchronizationStrategy;
-import net.sf.hajdbc.sync.DumpRestoreSynchronizationStrategy;
-import net.sf.hajdbc.sync.FastDifferentialSynchronizationStrategy;
-import net.sf.hajdbc.sync.FullSynchronizationStrategy;
-import net.sf.hajdbc.sync.PassiveSynchronizationStrategy;
-import net.sf.hajdbc.sync.PerTableSynchronizationStrategy;
 import net.sf.hajdbc.util.concurrent.cron.CronExpression;
 
 /**
  * Autoconfiguration support for HA-JDBC.
  */
-@ConfigurationProperties(prefix="hajdbc")
 @ConditionalOnClass(Driver.class)
 @AutoConfigureBefore(DataSourceAutoConfiguration.class)
+@EnableConfigurationProperties(HaJdbcProperties.class)
 @Configuration
 public class HaJdbcAutoConfiguration {
-    private static final List<SynchronizationStrategy> SYNCHRONIZATION_STRATEGIES = Arrays.asList(
-        new FullSynchronizationStrategy(),
-        new DumpRestoreSynchronizationStrategy(),
-        new DifferentialSynchronizationStrategy(),
-        new FastDifferentialSynchronizationStrategy(),
-        new PerTableSynchronizationStrategy(new FullSynchronizationStrategy()),
-        new PassiveSynchronizationStrategy()
-    );
+    private HaJdbcProperties properties;
 
-    /**
-     * Enable or disable HA JDBC integration
-     * **/
-    private boolean enabled = true;
-    /**
-     * Configure the backend databases for HA JDBC. Possible properties
-     * are id, location, driver, user and password
-     */
-    private List<DriverDatabase> driverDatabases;
-    /**
-     * The name of the HA JDBC cluster. To be used in the Spring Boot datasource url
-     */
-    private String clusterName = "default";
-    /**
-     * The cron expression that indicates when synchronization should occur
-     */
-    private String cronExpression = "0 0/1 * 1/1 * ? *";
-    /**
-     * What synchronization factory should be used
-     */
-    private String defaultSynchronizationStrategy = "full";
-    /**
-     * Whether identity column detection should be enabled
-     */
-    boolean identityColumnDetectionEnabled = true;
-    /**
-     * Whether sequence detection should be enabled
-     */
-    boolean sequenceDetectionEnabled = true;
+    public HaJdbcAutoConfiguration(HaJdbcProperties properties) {
+        this.properties = properties;
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -102,10 +61,10 @@ public class HaJdbcAutoConfiguration {
 
     @PostConstruct
     void register() throws ParseException {
-        if (enabled) {
+        if (properties.isEnabled()) {
             DriverDatabaseClusterConfiguration config = new DriverDatabaseClusterConfiguration();
-            if (driverDatabases != null && driverDatabases.size() > 0) {
-                config.setDatabases(driverDatabases);
+            if (properties.getDriverDatabases() != null && !properties.getDriverDatabases().isEmpty()) {
+                config.setDatabases(properties.getDriverDatabases());
             } else {
                 throw new IllegalStateException("HA JDBC driver databases should be configured to contain at least one driver database");
             }
@@ -113,77 +72,21 @@ public class HaJdbcAutoConfiguration {
             config.setBalancerFactory(balancerFactory());
             config.setStateManagerFactory(stateManagerFactory());
             config.setSynchronizationStrategyMap(getSynchronizationStrategyMap());
-            config.setDefaultSynchronizationStrategy(defaultSynchronizationStrategy);
-            config.setIdentityColumnDetectionEnabled(identityColumnDetectionEnabled);
-            config.setSequenceDetectionEnabled(sequenceDetectionEnabled);
-            config.setAutoActivationExpression(new CronExpression(cronExpression));
+            config.setDefaultSynchronizationStrategy(properties.getDefaultSynchronizationStrategy());
+            config.setIdentityColumnDetectionEnabled(properties.isIdentityColumnDetectionEnabled());
+            config.setSequenceDetectionEnabled(properties.isSequenceDetectionEnabled());
+            config.setAutoActivationExpression(new CronExpression(properties.getCronExpression()));
 
-            Driver.setConfigurationFactory(clusterName,
-                                           new SimpleDatabaseClusterConfigurationFactory<java.sql.Driver, DriverDatabase>(config));
+            Driver.setConfigurationFactory(properties.getClusterName(),
+                                           new SimpleDatabaseClusterConfigurationFactory<>(config));
         }
     }
 
     private static Map<String, SynchronizationStrategy> getSynchronizationStrategyMap() {
         Map<String, SynchronizationStrategy> map = new HashMap<>();
-        for (SynchronizationStrategy synchronizationStrategy : SYNCHRONIZATION_STRATEGIES) {
+        for (SynchronizationStrategy synchronizationStrategy : HaJdbcProperties.SYNCHRONIZATION_STRATEGIES) {
             map.put(synchronizationStrategy.getId(), synchronizationStrategy);
         }
         return map;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    public List<DriverDatabase> getDriverDatabases() {
-        return driverDatabases;
-    }
-
-    public void setDriverDatabases(List<DriverDatabase> driverDatabases) {
-        this.driverDatabases = driverDatabases;
-    }
-
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
-    }
-
-    public String getCronExpression() {
-        return cronExpression;
-    }
-
-    public void setCronExpression(String cronExpression) {
-        this.cronExpression = cronExpression;
-    }
-
-    public String getDefaultSynchronizationStrategy() {
-        return defaultSynchronizationStrategy;
-    }
-
-    public void setDefaultSynchronizationStrategy(String defaultSynchronizationStrategy) {
-        this.defaultSynchronizationStrategy = defaultSynchronizationStrategy;
-    }
-
-    public boolean isIdentityColumnDetectionEnabled() {
-        return identityColumnDetectionEnabled;
-    }
-
-    public void setIdentityColumnDetectionEnabled(boolean identityColumnDetectionEnabled) {
-        this.identityColumnDetectionEnabled = identityColumnDetectionEnabled;
-    }
-
-    public boolean isSequenceDetectionEnabled() {
-        return sequenceDetectionEnabled;
-    }
-
-    public void setSequenceDetectionEnabled(boolean sequenceDetectionEnabled) {
-        this.sequenceDetectionEnabled = sequenceDetectionEnabled;
     }
 }
