@@ -1,11 +1,10 @@
+dist: trusty
+sudo: false
 language: java
-
-install:
-  - TERM=dumb ./gradlew -q assemble
-
-script:
-  - TERM=dumb ./gradlew check
-
 jdk:
-  - oraclejdk7
-  - openjdk7
+  - openjdk8
+notifications:
+  email: false
+cache:
+  directories:
+    - "$HOME/.m2"
